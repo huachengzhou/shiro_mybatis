@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blake.dao.PrivilegeDao">
+    
+    <insert id="addPrivilege" parameterType="com.blake.entiyi.Privilege" >
+    	insert into sys_privilege(pid,DESCRIPTION) value(#{pid},#{description})
+    </insert>
+    
+    <delete id="removePrivilege" parameterType="java.lang.Integer">
+    	delete from sys_privilege where pid=#{pid}
+    </delete>
+    
+    <update id="updatePrivilege" parameterType="com.blake.entiyi.Privilege">
+    	update sys_privilege 
+    	<set>
+    	<if test="description != null">DESCRIPTION=#{description}</if>
+    	</set>
+    	where pid = #{pid}
+    </update>
+    
+    <select id="getPrivilege" parameterType="java.lang.Integer" resultType="com.blake.entiyi.Privilege">
+    	select * from sys_privilege where pid = #{pid}
+    </select>
+    
+    <resultMap type="com.blake.entiyi.Privilege" id="findPrivilegeMap">
+    	<id column="pid" property="pid"/>
+    	<result column="privilege_description" property="description"/>
+    	<collection property="roles" ofType="com.blake.entiyi.Role">
+    		<id column="rid" property="rid"/>
+    		<result column="role_name" property="role_name"/>
+    		<result column="DESCRIPTION" property="description"/>
+    		<result column="available" property="available"/>
+    	</collection>
+    </resultMap>
+    <select id="findPrivilege" parameterType="java.lang.Integer" resultMap="findPrivilegeMap">
+	    select sys_role.*,sys_privilege.DESCRIPTION as privilege_description,sys_privilege.pid 
+	     from sys_privilege , sys_role ,role_privilege
+	 	 where sys_role.rid=role_privilege.p_rid and sys_privilege.pid=r_pid and sys_privilege.pid=#{pid}
+    </select>
+    
+    <select id="getLongNumber" resultType="java.lang.Long">
+    	select count(*) from sys_privilege
+    </select>
+	<!-- .......................................分割线................................. -->
+	
+	<!-- 关联表的插入 -->
+	<insert id="addRole_Privilege">
+		insert into role_privilege(p_rid,r_pid,id) value(#{rid},#{pid},#{id})
+	</insert>
+	
+	<!-- 关联表的删除 -->
+	<delete id="removeRole_Privilege">
+		delete from role_privilege 
+		<where>
+			<if test="rid != null and pid != null"> 
+				and p_rid=#{rid} and r_pid=#{pid}
+			</if>
+			<if test="rid != null and pid == null">
+				and p_rid=#{rid}
+			</if>
+			<if test="rid == null and pid != null">
+				and r_pid=#{pid}
+			</if>
+			<!-- 这样设置应该会报一个异常,但是可以防止把所有数据都给删除了 -->
+			<if test="rid == null and pid == null">
+				and r_pid=0 and p_rid=0
+			</if>
+		</where>
+	</delete>
+	
+	<!-- 关联表的修改  , 参照Privilege表-->
+	<update id="updateRole_Privilege_P">
+		update role_privilege 
+		<set>
+		<if test="rid != null">and p_rid=#{rid}</if>
+		</set>
+		where r_pid = #{pid}
+	</update>
+	
+	<!-- 关联表的修改  , 参照Role表-->
+	<update id="updateRole_Privilege_R">
+		update role_privilege 
+		<set>
+		<if test="pid != null">and r_pid=#{pid}</if>
+		</set>
+		where p_rid = #{rid}
+	</update>
+	
+</mapper>
+
+

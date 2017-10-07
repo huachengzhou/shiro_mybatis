@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<properties resource="config/db.properties"> <!-- 这样设置之后在载入文件属性后会覆盖其属性 -->
+		<property name="url" value="jdbc:mysql://localhost:3306/mybatis" />
+	</properties>
+	<settings>
+		<!-- 指定 MyBatis 所用日志的具体实现 -->
+		<!-- 关闭延迟加载 的开关 -->
+		<setting name="lazyLoadingEnabled" value="false" />
+		<!-- 将积极加载改为消极加载即按需要加载 -->
+		<setting name="aggressiveLazyLoading" value="false" />
+		<!-- 关闭二级缓存 -->
+		<setting name="cacheEnabled" value="false" />
+	</settings>
+
+	<!-- 别名定义 -->
+	<typeAliases>
+		<!-- mybatis会自动扫描pack,首字母以大写定义或小写 ,在其sql配置文件就不用写全其路径位置example:User and 
+			user -->
+		<package name="cn.mybatis.po" />
+	</typeAliases>
+
+	<environments default="mysql">
+		<!-- 环境配置，即连接的数据库。 -->
+		<environment id="mysql">
+			<!-- 指定事务管理类型，type="JDBC"指直接简单使用了JDBC的提交和回滚设置 -->
+			<transactionManager type="JDBC" />
+			<!-- dataSource指数据源配置，POOLED是JDBC连接对象的数据源连接池的实现。 -->
+			<dataSource type="POOLED">
+				<property name="driver" value="${jdbc.driver}" />
+				<property name="url" value="${jdbc.url}" />
+				<property name="username" value="${jdbc.username}" />
+				<property name="password" value="${jdbc.password}" />
+			</dataSource>
+		</environment>
+	</environments>
+	<mappers>
+		<package name="cn.mybatis.mapper" />
+		<package name="cn.mybatis.dao"/>
+	</mappers>
+</configuration>

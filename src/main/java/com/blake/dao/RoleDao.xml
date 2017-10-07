@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blake.dao.RoleDao">
+    
+	<insert id="addRole" parameterType="com.blake.entiyi.Role">
+	 	<!-- oracle不支持自动生成主键,因此可以采用如下方式
+	    <selectKey keyProperty="id" resultType="int" order="BEFORE">
+	        select sequence_tb_user.nextval as id from dual
+	    </selectKey>
+	     -->
+		<selectKey keyProperty="rid" order="AFTER" resultType="java.lang.Integer" >
+			select LAST_INSERT_ID()
+		</selectKey>
+		insert into sys_role(available,DESCRIPTION,role_name,rid) value(#{available},#{description},#{role_name},#{rid})
+	</insert>
+	
+	<select id="getLongNumber" resultType="java.lang.Long">select count(*) from sys_role</select>
+	
+	<select id="findRoleID" parameterType="java.lang.Integer" resultType="com.blake.entiyi.Role">
+		select * from sys_role where rid=#{rid}
+	</select>
+	
+	<delete id="removeRole" parameterType="java.lang.Integer">
+		delete from sys_role where rid=#{rid}
+	</delete>
+	
+	<delete id="removeRoles">
+		delete from sys_role where rid in
+	    <foreach collection="rids" open="(" close=")" separator="," item="item_id">
+	    #{item_id}
+	    </foreach>
+	</delete>
+	
+	<update id="updateRole" parameterType="com.blake.entiyi.Role">
+		update sys_role 
+		<set>
+		<if test="role_name != null">role_name=#{role_name} ,</if>
+		<if test="description != null">DESCRIPTION=#{description} ,</if>
+		<if test="available != null">available=#{available}</if>
+		</set>
+		where rid = #{rid}
+	</update>
+	
+	
+	<resultMap type="com.blake.entiyi.Role" id="findRoleByIdMap">
+		<id column="rid" property="rid"/>
+		<result column="role_name" property="role_name"/>
+		<result column="rid" property="rid"/>
+		<result column="DESCRIPTION" property="description"/>
+		<result column="available" property="available"/>
+		<collection property="users" ofType="com.blake.entiyi.User">
+			<id column="uid" property="uid"/>
+			<id column="organizationid" property="organizationid"/>
+			<id column="username" property="username"/>
+			<id column="password" property="password"/>
+			<id column="salt" property="salt"/>
+			<id column="lock_User" property="lock_User"/>
+			<id column="time" property="time"/>
+		</collection>
+		<collection property="privileges" ofType="com.blake.entiyi.Privilege">
+			<id column="pid" property="pid"/>
+			<result column="privilege_description" property="description"/>
+		</collection>
+	</resultMap>
+	<select id="findRoleById" parameterType="java.lang.Integer" resultMap="findRoleByIdMap">
+		 SELECT sys_role.* , sys_user.* ,sys_privilege.DESCRIPTION AS privilege_description,sys_privilege.pid 
+		  FROM sys_role,sys_user,sys_privilege,role_privilege,role_user WHERE 
+ 		  role_user.u_rid=sys_role.rid AND role_user.r_uid=sys_user.uid AND role_privilege.p_rid=sys_role.rid 
+ 		  AND role_privilege.r_pid=sys_privilege.pid AND sys_role.rid=#{rid}
+	</select>
+	
+	<select id="getPageRoles" parameterType="com.blake.entiyi.page.PageResult_Role" resultMap="findRoleByIdMap">
+		SELECT sys_role.* , sys_user.* ,sys_privilege.DESCRIPTION AS privilege_description,sys_privilege.pid 
+		 FROM sys_role,sys_user,sys_privilege,role_privilege,role_user WHERE 
+		 role_user.u_rid=sys_role.rid AND role_user.r_uid=sys_user.uid AND role_privilege.p_rid=sys_role.rid AND role_privilege.r_pid=sys_privilege.pid
+		  limit #{num},#{pageSize}
+	</select>
+	
+	<resultMap type="com.blake.entiyi.Role" id="findRolePrivilegeMap">
+		<id column="rid" property="rid"/>
+		<result column="role_name" property="role_name"/>
+		<result column="rid" property="rid"/>
+		<result column="DESCRIPTION" property="description"/>
+		<result column="available" property="available"/>
+		<collection property="privileges" ofType="com.blake.entiyi.Privilege">
+			<id column="pid" property="pid"/>
+			<result column="privilege_description" property="description"/>
+		</collection>
+	</resultMap>
+	<select id="findRolePrivilege" resultMap="findRolePrivilegeMap">
+		SELECT sys_role.* , sys_privilege.DESCRIPTION AS privilege_description,sys_privilege.pid 
+		 FROM sys_role,sys_privilege,role_privilege WHERE 
+		 role_privilege.p_rid=sys_role.rid AND  role_privilege.r_pid=sys_privilege.pid 
+	</select>
+	
+	<resultMap type="com.blake.entiyi.Role" id="findRolesUserPrivilegeMap">
+		<id column="rid" property="rid"/>
+		<result column="role_name" property="role_name"/>
+		<result column="rid" property="rid"/>
+		<result column="DESCRIPTION" property="description"/>
+		<result column="available" property="available"/>
+		<collection property="users" ofType="com.blake.entiyi.User">
+			<id column="uid" property="uid"/>
+			<id column="organizationid" property="organizationid"/>
+			<id column="username" property="username"/>
+			<id column="password" property="password"/>
+			<id column="salt" property="salt"/>
+			<id column="lock_User" property="lock_User"/>
+			<id column="time" property="time"/>
+		</collection>
+		<collection property="privileges" ofType="com.blake.entiyi.Privilege">
+			<id column="pid" property="pid"/>
+			<result column="privilege_description" property="description"/>
+		</collection>
+	</resultMap>
+	<select id="findRolesUserPrivilege" resultMap="findRolesUserPrivilegeMap">
+		SELECT sys_role.* , sys_user.* ,sys_privilege.DESCRIPTION AS privilege_description,sys_privilege.pid 
+ 		FROM sys_role,sys_user,sys_privilege,role_privilege,role_user WHERE 
+		role_user.u_rid=sys_role.rid AND role_user.r_uid=sys_user.uid AND role_privilege.p_rid=sys_role.rid AND role_privilege.r_pid=sys_privilege.pid
+	</select>
+	<!-- ......................................分割线...................................... -->
+	
+	<!-- 关联表的插入 -->
+	<insert id="addRole_User">
+		insert into role_user(u_rid,r_uid,id) value(#{rid},#{uid},#{id})
+	</insert>
+	
+	<!-- 关联表的删除 -->
+	<delete id="removeRole_User">
+	<!-- delete from role_user where u_rid=1 and r_uid =2,delete from role_user where u_rid=1 -->
+		delete from role_user 
+		<where>
+			<if test="rid != null and uid != null"> 
+				and u_rid=#{rid} and r_uid=#{uid}
+			</if>
+			<if test="rid != null and uid == null">
+				and u_rid=#{rid}
+			</if>
+			<if test="rid == null and uid != null">
+				and r_uid=#{uid}
+			</if>
+			<!-- 这样设置应该会报一个异常,但是可以防止把所有数据都给删除了 -->
+			<if test="rid == null and uid == null">
+				and u_rid=0 and r_uid=0
+			</if>
+		</where>
+	</delete>
+	
+	<!-- 关联表的修改    由于修改非常的麻烦,因此约定如下,因此参照User表来修改-->
+	<update id="updateRole_User">
+		update role_user 
+		<set>
+		<if test="rid != null">and u_rid=#{rid}</if>
+		</set>
+		where r_uid = #{uid}
+	</update>
+	
+	<!-- 关联表的修改    由于修改非常的麻烦,因此约定如下,因此参照Role表来修改-->
+	<update id="updateRole_User_R">
+		update role_user 
+		<set>
+		<if test="uid != null">and r_uid=#{uid}</if>
+		</set>
+		where u_rid = #{rid}
+	</update>
+</mapper>
+
+

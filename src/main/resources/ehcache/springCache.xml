@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache name="es">
+
+    <diskStore path="java.io.tmpdir"/>
+
+	
+	<!-- Spring Controller启用的缓存  最大堆存储50MB 存活时间100m-->
+	<cache name="spittleCache" 
+			maxEntriesLocalHeap="500"
+			eternal="false"
+           timeToIdleSeconds="3600"
+           timeToLiveSeconds="0"
+           overflowToDisk="false"
+           statistics="true">
+	</cache>
+	
+</ehcache>

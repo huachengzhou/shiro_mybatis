@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.mybatis.dao.UserDao">
+
+	<resultMap type="cn.mybatis.po.Orders" id="orders_userMap"><!-- type要输出的类型 -->
+		<id column="id" property="id"/>
+		<result column="user_id" property="userId"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		<result column="note" property="note"/>
+		<!-- 配置user的映射关系 -->
+		<association property="user" javaType="cn.mybatis.po.User">
+			<id column="user_id" property="id"/><!-- 映射到User中的id属性 -->
+			<result column="username" property="username"/>
+			<result column="sex" property="sex"/>
+			<result column="address" property="address"/>
+			<result column="birthday" property="birthday"/>
+		</association>
+	</resultMap>
+	<select id="selectOrdersCustom" resultType="cn.mybatis.po.OrdersCustom">
+		SELECT orders.* ,user.`username` ,user.`address`,user.`sex`,user.`birthday` FROM USER , orders WHERE orders.`user_id`=user.`id`
+	</select>
+	
+	
+	<select id="slectOrders" resultMap="orders_userMap">
+			SELECT orders.* ,user.`username` ,user.`address`,user.`sex`,user.`birthday` FROM USER , orders WHERE orders.`user_id`=user.`id`
+	</select>
+	
+	
+	<resultMap type="cn.mybatis.po.Orders" id="slectOrdersAndListMap"> <!-- 可以使用extends -->
+		<id column="id" property="id"/>
+		<result column="user_id" property="userId"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		<result column="note" property="note"/>
+		<!-- 配置user的映射关系 -->
+		<association property="user" javaType="cn.mybatis.po.User">
+			<id column="user_id" property="id"/><!-- 映射到User中的id属性 -->
+			<result column="username" property="username"/>
+			<result column="sex" property="sex"/>
+			<result column="address" property="address"/>
+			<result column="birthday" property="birthday"/>
+		</association>
+		<collection property="orderdetails" ofType="cn.mybatis.po.Orderdetail">
+			<id column="orderdetail_id" property="id"/>
+			<result column="items_num" property="itemsNum"/>
+			<result column="items_id" property="itemsId"/>
+			<result column="orders_id" property="ordersId"/>
+		</collection>
+	</resultMap>
+	<select id="slectOrdersAndList" resultMap="slectOrdersAndListMap">
+		SELECT orders.*,user.`username` ,user.`address`,user.`sex`,user.`birthday`,orderdetail.`id` AS orderdetail_id,
+		orderdetail.`items_num`,orderdetail.`items_id`,orderdetail.`orders_id` FROM USER,orderdetail,orders WHERE orders.`user_id`=user.`id`
+		AND orderdetail.`orders_id`=orders.`id`
+	</select>
+	
+	<!-- 查询用户及购买的商品 -->
+	<resultMap type="cn.mybatis.po.User" id="user_map">
+		<!-- 用户信息 -->
+		<id column="user_id" property="id"/>
+		<result column="username" property="username"/>
+		<result column="address" property="address"/>
+		<result column="sex" property="sex"/>
+		<result column="birthday" property="birthday"/>
+		<collection property="ordersList" ofType="cn.mybatis.po.Orders">
+			<id column="id" property="id"/>
+			<result column="user_id" property="userId"/>
+			<result column="number" property="number"/>
+			<result column="createtime" property="createtime"/>
+			<result column="note" property="note"/>
+			<!-- 一个订单包括多个明细 -->
+			<collection property="orderdetails" ofType="cn.mybatis.po.Orderdetail">
+				<id column="orderdetail_id" property="id"/>
+				<result column="items_num" property="itemsNum"/>
+				<result column="items_id" property="itemsId"/>
+				<result column="orders_id" property="ordersId"/>
+				<!-- 一个订单包括一个商品 -->
+				<association property="items" javaType="cn.mybatis.po.Items">
+					<id column="items_id" property="id"/>
+					<result column="item_Name" property="name"/>
+					<result column="item_Detail" property="detail"/>
+					<result column="item_Pic" property="pic"/>
+					<result column="items_Price" property="price"/>
+				</association>
+			</collection>
+		</collection>
+	</resultMap>
+	<select id="findList" resultMap="user_map">
+		SELECT orders.*,user.`username` ,user.`address`,user.`sex`,user.`birthday`,
+		orderdetail.`id` AS orderdetail_id,orderdetail.`items_num`,orderdetail.`items_id`,orderdetail.`orders_id` ,
+		items.`name` AS item_Name,items.`detail` AS item_Detail,items.`pic` AS item_Pic,items.`price` AS items_Price,items.`id` AS items_id
+		FROM USER,orderdetail,orders,items 
+		WHERE orders.`user_id`=user.`id`
+		AND orderdetail.`orders_id`=orders.`id` AND items.`id` = orderdetail.`items_id`
+	</select>
+	
+</mapper>
+
+

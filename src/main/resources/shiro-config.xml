@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+	<!-- 自定义Realm -->
+	<bean id="userRealm" class="com.blake.shiro.realm.UserRealm">
+		<!-- 缓存处理 -->
+		<property name="authenticationCachingEnabled" value="true" />
+		<property name="authenticationCacheName" value="authenticationCache" />
+		<property name="authorizationCachingEnabled" value="true" />
+		<property name="authorizationCacheName" value="authorizationCache" />
+	</bean>
+	<!-- 缓存管理器 -->
+	<bean id="cacheManager" class="com.blake.spring.cache.SpringCacheManagerWrapper">
+		<property name="cacheManager" ref="springCacheManager" />
+	</bean>
+	<!-- 安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="realm" ref="userRealm" />
+		<property name="cacheManager" ref="cacheManager" />
+		<property name="sessionManager" ref="sessionManager" />
+	</bean>
+	
+	
+	<!-- 会话ID生成器 -->
+	<bean id="sessionIdGenerator" class="org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator" />
+	<!-- 会话DAO -->
+	<bean id="sessionDAO" class="org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO">
+		<property name="activeSessionsCacheName" value="shiro-activeSessionCache" /><!-- ehcache.xml -->
+		<property name="sessionIdGenerator" ref="sessionIdGenerator" />
+	</bean>
+	<!-- 会话验证调度器 -->
+	<bean id="sessionValidationScheduler" class="org.apache.shiro.session.mgt.quartz.QuartzSessionValidationScheduler">
+		<property name="sessionValidationInterval" value="1800000" />
+		<property name="sessionManager" ref="sessionManager" />
+	</bean>
+	<!-- 会话管理器 -->
+	<bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+		<property name="globalSessionTimeout" value="1800000" />
+		<property name="deleteInvalidSessions" value="true" />
+		<property name="sessionValidationSchedulerEnabled" value="true" />
+		<property name="sessionValidationScheduler" ref="sessionValidationScheduler" />
+		<property name="sessionDAO" ref="sessionDAO" />
+		
+	</bean>
+	<!-- Shiro过滤器 -->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<!-- Shiro的核心安全接口,这个属性是必须的 -->
+		<property name="securityManager" ref="securityManager" />
+		<!-- 身份认证失败，则跳转到登录页面的配置 -->
+		<!-- <property name="loginUrl" value="/WEB-INF/views/login.jsp" /> -->
+		<property name="loginUrl" value="/"></property>
+		<property name="unauthorizedUrl" value="/"></property>
+		<property name="filters">
+			<map>
+				<entry key="kickout" value-ref="kickoutSessionControlFilter" />
+			</map>
+		</property>
+		<!-- Shiro连接约束配置,即过滤链的定义 -->
+		<property name="filterChainDefinitions">
+			<value>
+				/login=anon
+				/static/**=anon
+				/admin*=authc
+				/logout=logout
+				/** = kickout,authc
+			</value>
+		</property>
+		<!-- 
+		/login=anon
+		/static/**=anon
+		/admin*=authc
+		/logout=logout
+		/**=authc
+		 -->
+	</bean>
+	<!-- 控制并发登录人数 -->
+	<bean id="kickoutSessionControlFilter" class="com.blake.shiro.filter.KickoutSessionControlFilter">
+		<property name="cacheManager" ref="cacheManager" />
+		<property name="sessionManager" ref="sessionManager" />
+		<property name="kickoutAfter" value="false" />
+		<property name="maxSession" value="1" />
+		<property name="kickoutUrl" value="/login" />
+	</bean>
+	<!-- 保证实现了Shiro内部lifecycle函数的bean执行 -->
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+	<!-- 导入ehcache配置文件 -->
+	<import resource="shiro-ehcache.xml"/>
+</beans>

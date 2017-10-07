@@ -1,0 +1,4 @@
+RESTRICT 限制
+NO ACTION 没有行动
+CASCADE 级联
+SET NULL 设置空

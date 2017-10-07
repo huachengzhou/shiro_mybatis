@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.mybatis.mapper.UserMapper">
+
+    <!--  <cache type="org.mybatis.caches.ehcache.EhcacheCache" />-->
+	<!-- 开启本mapper的namespace下的二缓存type：指定cache接口的实现类的类型，mybatis默认使用PerpetualCache
+	要和ehcache整合，需要配置type为ehcache实现cache接口的类型 -->
+	
+    <sql id="query_user_where" >  <!-- SQL片断(提高重用性)拼接时and会自动去掉 -->
+	   <if test="userCustom!=null">  and  user.id>#{userCustom.id} and user.username like '%${userCustom.username}%' </if>
+	   <if test="userCustom.username==null">  and  user.id>#{userCustom.id}</if>
+	   <if test="userCustom.id==null">  and  user.username like '%${userCustom.username}%'</if>
+	   <if test="userCustom==null">and where id=0</if>
+	   <if test="ids!=null">
+	       <foreach collection="ids" item="user_id" open="and id in(" close=")" separator=","> 
+	           #{user_id}  <!-- 每次遍历需要拼接的串 select username as '名字' from user where id in(2,3,4) ;-->
+	       </foreach>
+	       <!-- 
+	       <foreach collection="ids" item="user_id" open="and (" close=")" separator="or" >
+           id=#{user_id}</foreach>
+	        -->
+	   </if>
+    </sql>
+    
+	<select id="findUserById" parameterType="int" resultType="cn.mybatis.po.User" useCache="true">
+		SELECT * FROM USER WHERE id=#{value}
+	</select>
+	
+	<update id="updateUser" parameterType="cn.mybatis.po.User">
+		update user set username=#{username},birthday=#{birthday},sex=#{sex},address=#{address} 
+		 where id=#{id}
+	</update>
+	
+	<delete id="deleteUser" parameterType="int">
+		delete from user where id=#{id}
+	</delete>
+	
+	<insert id="insertUser" parameterType="cn.mybatis.po.User" useGeneratedKeys="true" keyProperty="id">
+	    <!-- oracle不支持自动生成主键,因此可以采用如下方式
+	    <selectKey keyProperty="id" resultType="int" order="BEFORE">
+	        select sequence_tb_user.nextval as id from dual
+	    </selectKey>
+	     -->
+	    insert into user(username,birthday,sex,address) value(#{username},#{birthday},#{sex},#{address})
+	</insert>
+	
+	<select id="countUser" resultType="int">
+	    select count(id) from user
+	</select>
+	
+	<select id="findUserByName" parameterType="java.lang.String" resultType="User">
+	    select * from user where username like '%${value}%'
+	</select>
+	
+	
+	
+	<!-- select 用户信息综合查询     
+	 select * from user where user.id>2 and user.username like '%小%';
+	 select id id_ ,address from user where user.id>2 and user.username like '%小%';
+     select id as id_ ,address from user where user.id>2 and user.username like '%小%';
+	 -->
+	<select id="findUserList" parameterType="userQueryVo" resultType="userCustom" useCache="true">
+	    <!-- 不能像这样写 select * from user where user.id>#{id} and user.username like '%${username}%'  因为是包装类型 :必须注意哦!-->
+	    <!-- select * from user where user.id>#{userCustom.id} and user.username like '%${userCustom.username}%' -->
+	    select * from user 
+	    <where>   <!-- 引用SQL片断的id如果refid指定的id在本mapper文件中,需要前边加namespace例如:shopMapper.query_shop_where -->
+	        <include refid="query_user_where"/>
+	    </where>
+	</select> <!-- 用户信息综合查询     数量 -->
+	
+	<select id="findUserCount" parameterType="userQueryVo" resultType="int"><!-- 和上面的查询配套使用 -->
+	     <!-- select count(*) from user where user.id>#{userCustom.id} and user.username like '%${userCustom.username}%' -->
+	     select count(*) from user 
+	     <where>       <!-- 拼接时and会自动去掉 -->
+	         <if test="userCustom!=null">  and  user.id>#{userCustom.id} and user.username like '%${userCustom.username}%' </if>
+	         <if test="userCustom.username==null">  and  user.id>#{userCustom.id}</if>
+	         <if test="userCustom.id==null">  and  user.username like '%${userCustom.username}%'</if>
+	         <if test="userCustom==null">and where id=0</if>
+	     </where>
+	</select>
+	
+	
+	
+	<select id="findUserByHashMap" parameterType="user" resultType="java.util.HashMap">
+	    select * from user where id = #{id} and username like '%${username}%' <!-- key 就是column name -->
+	</select>
+	
+	<!-- 定义resultMap  type：resultMap最终映射的java对象类型,可以使用别名  id：对resultMap的唯一标识 -->
+	<resultMap type="user" id="userResultMap">
+	    <id column="id_" property="id" />
+	    <result column="username_" property="username" />
+	</resultMap>
+	<select id="findUserByIdResultMap" parameterType="int" resultMap="userResultMap">
+	    select id as id_ , username as username_ from user where id = #{value}
+	    <!-- 注意:这的id_必须与 userResultMap的id_一致否则查出来就为null-->
+	</select>
+	
+</mapper>
+
+
