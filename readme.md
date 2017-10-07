@@ -8,6 +8,7 @@
 然后把加密密码和salt存入数据库 --->salt我是用uuid生成然后截取前面15位 解密同样很简单的String password = Base64UU.getString(password+salt); 
 解密后的密码要注意假如你的密码是123456盐是xxsdgshsgs 那么解密后的密码是123456xxsdgshsgs,利用String的截取方法截取password即可
 
-假如发现问题可以联系本人QQ134266212 或者邮箱noatnu@163.com
-
 导入shiro_mybatis.sql,当然了得新创建一个shiro_mybatis数据库,并且把db.properties中的数据库信息改了即可
+
+
+假如发现问题可以联系本人QQ134266212 或者邮箱noatnu@163.com
